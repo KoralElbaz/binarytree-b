@@ -1,6 +1,7 @@
 #pragma one
 #include <memory>
 #include <stack>
+#include <iostream>
 
 namespace ariel
 {
@@ -19,10 +20,15 @@ namespace ariel
             Node *parent;
 
         public:
-            Node(T val) : data(val), right(NULL), left(NULL), parent(NULL){};
-             bool operator==(Node other) {
+            T get_data()
+            {
+                return data;
+            }
+            Node(T val) : data(val), right(nullptr), left(nullptr), parent(nullptr){};
+            bool operator==(Node other)
+            {
                 return this->data == other->data && this->left == other->left &&
-                       this->right == other.right && this->parent == other.parent;
+                       this->right == other.right && this->parent == other->parent;
             }
         };
         //----------------- Tree objects --------------//
@@ -41,18 +47,22 @@ namespace ariel
             Node *curr;
             Order order_By;
             std::stack<Node *> stack;
+
         public:
             // constrctor
-            Iterator(Node *node, const Order &orderBy) : order_By(orderBy)
+            Iterator() : curr(nullptr){};
+            Iterator(const Order orderBy, Node *node=nullptr) : curr(node) ,order_By(orderBy)
             {
                 init_Stack(node);
+                if (!stack.empty())
+                {
 
-                curr = stack.top();
-                stack.pop();
+                    curr = stack.top();
+                    stack.pop();
+                }
             }
-            Iterator() : curr(nullptr){};
-            
-            Node* get_curr()
+
+            Node *get_curr()
             {
                 return curr;
             }
@@ -65,10 +75,11 @@ namespace ariel
                 //Base
                 if (node == nullptr)
                 {
-                    return;
+                return;
                 }
                 if (order_By == inorder)
                 {
+
                     init_Stack(node->right);
                     stack.push(node);
                     init_Stack(node->left);
@@ -92,30 +103,30 @@ namespace ariel
                 if (stack.empty())
                 {
                     curr = nullptr;
-                    return *this;
                 }
-                curr = stack.top();
-                stack.pop();
+                else
+                {
+                    curr = stack.top();
+                    stack.pop();
+                }
+
                 return *this;
             }
             //i++
-            const Iterator operator++(int)
+            Iterator operator++(int)
             {
+
+                Iterator tmp = *this;
                 if (stack.empty())
                 {
                     curr = nullptr;
-                    return *this;
                 }
-                Node *t = curr;
-                curr = stack.top();
-                stack.pop();
-                return const Iterator(t, inorder);
-
-                // Iterator t=*this;
-                // curr=stack.top();
-                // stack.pop();
-                // return t;
-
+                else
+                {
+                    curr = stack.top();
+                    stack.pop();
+                }
+                return tmp;
             }
 
             T &operator*() const
@@ -129,8 +140,15 @@ namespace ariel
             }
             bool operator==(const Iterator &other) const
             {
+                // if (curr == nullptr || other.curr == nullptr)
+                // {
+                //     if (curr == nullptr && other.curr == nullptr)
+                //     {
+                //         return true;
+                //     }
+                //     return false;
+                // }
                 return curr == other.curr;
-                // need to check
             }
 
             bool operator!=(const Iterator &other) const
@@ -140,49 +158,65 @@ namespace ariel
         };
         //--------------- Tree ----------------//
     public:
-        BinaryTree() : root(nullptr) {}
+        BinaryTree<T>() : root(nullptr)
+        {
+        };
 
         //--------------//
 
- void copy_ctor(Node *nd, const Node *other_nd) {
-            if (other_nd->left != nullptr) {
+        void copy_ctor(Node *nd, const Node *other_nd)
+        {
+            if (other_nd->left != nullptr)
+            {
                 nd->left = new Node(other_nd->left->data);
                 copy_ctor(nd->left, other_nd->left);
             }
-            if (other_nd->right != nullptr) {
+            if (other_nd->right != nullptr)
+            {
                 nd->right = new Node(other_nd->right->data);
                 copy_ctor(nd->right, other_nd->right);
             }
         }
 
-        BinaryTree &operator=(const BinaryTree<T> &bt) {
-            if (this == &bt) {
+        BinaryTree<T> &operator=(const BinaryTree<T> &bt)
+        {
+            if (this == &bt)
+            {
                 return *this;
             }
-            if (root != nullptr) {
+            if (root != nullptr)
+            {
                 delete root;
             }
-            if (bt.root != nullptr) {
+            if (bt.root != nullptr)
+            {
                 root = new Node{bt.root->data};
                 copy_ctor(root, bt.root);
             }
             return *this;
         }
 
-        BinaryTree(const BinaryTree &bt) { //copy ctor
-            if (bt.root != nullptr) {
+        BinaryTree<T>(const BinaryTree<T> &bt)
+        { //copy ctor
+            if (bt.root != nullptr)
+            {
                 this->root = new Node(bt.root->data);
                 copy_ctor(root, bt.root);
             }
         }
-        BinaryTree& operator=(BinaryTree<T>&& bt) noexcept {
-            if (root){ delete root;}
-            root  = bt.root;
+        BinaryTree<T> &operator=(BinaryTree<T> &&bt) noexcept // move opertor
+        {
+            if (root)
+            {
+                delete root;
+            }
+            root = bt.root;
             bt.root = nullptr;
             return *this;
         }
 
-        BinaryTree(BinaryTree &&bt)  noexcept {
+        BinaryTree(BinaryTree<T> &&bt) noexcept // move constructor
+        {
             this->root = bt.root;
             bt.root = nullptr;
         }
@@ -192,15 +226,16 @@ namespace ariel
         {
             if (root)
             {
-                 for (auto it = (*this).begin_postorder(); it != (*this).end_postorder(); ++it) {
+                for (auto it = (*this).begin_postorder(); it != (*this).end_postorder(); ++it)
+                {
                     delete it.get_curr();
                 }
             }
         }
 
-    
         friend std::ostream &operator<<(std::ostream &os, const BinaryTree<T> &tree)
         {
+            os << tree.root->data;
             return os;
         }
         BinaryTree<T> &add_root(T data)
@@ -222,38 +257,15 @@ namespace ariel
             {
                 return nullptr;
             }
-            if (node->data == value) // we found the value !!!!!
+            for (auto it = begin_inorder(); it != end_inorder(); ++it)
             {
-                return node;
+                if (*it == value)
+                {
+                    return it.get_curr();
+                }
             }
-            Node *right_node = nullptr;
-            Node *left_node = nullptr;
-            if (node->left != nullptr) // if we can move left
-            {
-                left_node = found_node(node->left, value);
-            }
-            if (node->right != nullptr) // if we can move right
-            {
-                right_node = found_node(node->right, value);
-            }
-            // If the tree is not symmetrical
-            if (left_node != nullptr)
-            {
-                return left_node;
-            }
-            else
-            {
-                return right_node;
-            }
-        };
-
-        // Node *find_node(T value){
-        //     if(root->value==value)
-        //     {
-        //         return root;
-        //     }
-        //     return find_node(root,val);
-        // };
+            return nullptr;
+        }
 
         BinaryTree<T> &add_left(T parent_val, T child_val)
         {
@@ -262,17 +274,15 @@ namespace ariel
             {
                 throw std::invalid_argument("No value found");
             }
-            else
+
+            if (found->left == nullptr) //If he has no left son
             {
-                if (found->left == nullptr) //If he has no left son
-                {
-                    found->left = new Node(child_val);
-                    found->left->parent = found; // Updating his parent
-                }
-                else // If he has a son
-                {
-                    found->left->data = child_val;
-                }
+                found->left = new Node(child_val);
+                found->left->parent = found; // Updating his parent
+            }
+            else // If he has a son
+            {
+                found->left->data = child_val;
             }
             return *this;
         }
@@ -284,24 +294,21 @@ namespace ariel
             {
                 throw std::invalid_argument("No value found");
             }
-            else
+            if (found->right == nullptr) //If he has no right son
             {
-                if (found->right == nullptr) //If he has no right son
-                {
-                    found->right = new Node(child_val);
-                    found->right->parent = found; // Updating his parent
-                }
-                else // If he has a son
-                {
-                    found->right->data = child_val;
-                }
+                found->right = new Node(child_val);
+                found->right->parent = found; // Updating his parent
+            }
+            else // If he has a son
+            {
+                found->right->data = child_val;
             }
             return *this;
         }
 
         Iterator begin()
         {
-            return Iterator{root, inorder};
+            return Iterator{inorder,root};
         };
         Iterator end()
         {
@@ -309,19 +316,21 @@ namespace ariel
         };
         Iterator end_preorder()
         {
+
             return Iterator{};
         }
         Iterator begin_preorder()
         {
-            return Iterator{root, preorder};
+            return Iterator{preorder,root};
         }
         Iterator end_inorder()
         {
+
             return Iterator{};
         }
         Iterator begin_inorder()
         {
-            return Iterator{root, inorder};
+            return Iterator{inorder, root};
         }
         Iterator end_postorder()
         {
@@ -329,7 +338,7 @@ namespace ariel
         }
         Iterator begin_postorder()
         {
-            return Iterator{root, postorder};
+            return Iterator{ postorder, root};
         }
     };
 }
