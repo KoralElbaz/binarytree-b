@@ -67,9 +67,6 @@ namespace ariel
                 return curr;
             }
 
-            //destrctor
-            ~Iterator(){};
-
             void init_Stack(Node *node)
             {
                 //Base
